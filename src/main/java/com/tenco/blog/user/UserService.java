@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RequiredArgsConstructor
 @Service
@@ -16,7 +19,39 @@ public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserJpaRepository userJpaRepository;
+    private final ProfileUploadService profileUploadService;
 
+    /**
+     * 프로필 이미지 업로드 서비스(DB 저장까지)
+     * @param userId
+     * @param multipartFile
+     * @return
+     */
+    @Transactional
+    public User uploadProfileImage(Long userId, MultipartFile multipartFile) {
+
+        User user = findById(userId);
+        // 최초등록, 수정시도 있음
+        String oldImagePath = user.getProfileImagePath();
+
+        try {
+            // 1. 새 이미지를 서버 컴퓨터에 생성 완료...
+            String newImagePath = profileUploadService.uploadProfileImage(multipartFile);
+
+            // 2. 사용자 프로필 이미지 경로 업데이트
+//            UserRequest.UpdateDTO updateDTO = new UserRequest.UpdateDTO();
+//            updateDTO.setPassword(user.getPassword());
+//            updateDTO.setEmail(user.getEmail());
+//            updateDTO.setProfileImagePath(newImagePath);
+
+            // 3. db에 저장 더티 치킹 활용
+            user.setProfileImagePath(newImagePath);
+            // TODO -
+            return user;
+        } catch (IOException e) {
+            throw new Exception400("프로필 이미지 업로드에 실패했습니다");
+        }
+    }
 
     /**
      * 회원가입 처리
@@ -65,4 +100,6 @@ public class UserService {
         user.setPassword(updateDTO.getPassword());
         return user;
     }
+
+
 }

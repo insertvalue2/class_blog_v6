@@ -1,5 +1,6 @@
 package com.tenco.blog.user;
 
+import com.tenco.blog._core.errors.exception.Exception400;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -91,6 +92,32 @@ public class ProfileUploadService {
             Files.createDirectories(uploadPath);
         }
     }
+
+    /**
+     * 프로필 이지미를 삭제하는 메서드
+     */
+    public void deleteProfileImage(String imagePath) {
+
+        if(imagePath != null && imagePath.isEmpty() == false) {
+            try {
+                // uploads/profiles/123123123123.jpg
+
+                // 1 단계 : 전체 경로에서 파일명만 추출
+                String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+
+                // 2 단계 : 실제 파일 시스템 경로 생성
+                Path filePath = Paths.get(uploadDir, fileName);
+
+                // 3단계 : 파일이 존재하면 삭제, 없으면 아무것도 안함
+                Files.deleteIfExists(filePath);
+
+            } catch (IOException e) {
+                throw new Exception400("프로필 이미지를 삭제하지 못하였습니다");
+            }
+        }
+
+    }
+
 }
 
 

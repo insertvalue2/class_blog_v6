@@ -119,9 +119,12 @@ public class UserController {
     }
 
     @PostMapping("/user/delete-profile-image")
-    public String deleteProfileImage(HttpSession httpSession) {
-
-        // 파일 삭제 로직 시작 ...
+    public String deleteProfileImage(HttpSession session) {
+        User sessionUser = (User) session.getAttribute(Define.SESSION_USER);
+        // DB 경로를 null 처리하고 실제 파일도 삭제 처리 함
+        User updateUser = userService.deleteProfileImage(sessionUser.getId());
+        // 세션 정보 업데이트 처리
+        session.setAttribute(Define.SESSION_USER, updateUser);
         return "redirect:/user/update-form";
     }
 

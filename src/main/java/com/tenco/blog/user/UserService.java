@@ -31,27 +31,42 @@ public class UserService {
     public User uploadProfileImage(Long userId, MultipartFile multipartFile) {
 
         User user = findById(userId);
-        // 최초등록, 수정시도 있음
+        // 최초 등록, 수정시도 있음
         String oldImagePath = user.getProfileImagePath();
 
         try {
             // 1. 새 이미지를 서버 컴퓨터에 생성 완료...
             String newImagePath = profileUploadService.uploadProfileImage(multipartFile);
-
-            // 2. 사용자 프로필 이미지 경로 업데이트
-//            UserRequest.UpdateDTO updateDTO = new UserRequest.UpdateDTO();
-//            updateDTO.setPassword(user.getPassword());
-//            updateDTO.setEmail(user.getEmail());
-//            updateDTO.setProfileImagePath(newImagePath);
-
-            // 3. db에 저장 더티 치킹 활용
+            // 2. 기존에 이미지가 있다면 서버 컴퓨터에서 파일 제거(공간 부족하니깐)
+            if(oldImagePath != null) {
+                profileUploadService.deleteProfileImage(oldImagePath);
+            }
+            // 3. db에 저장 더티 체킹 활용
             user.setProfileImagePath(newImagePath);
-            // TODO -
             return user;
         } catch (IOException e) {
             throw new Exception400("프로필 이미지 업로드에 실패했습니다");
         }
     }
+
+    // 이미지 삭제만 처리하는 메서드
+    @Transactional
+    public User deleteProfileImage(Long userId) {
+
+        User user = findById(userId);
+        // DB에 저장된 이미기 경로 추출
+        String imagePath = user.getProfileImagePath();
+
+        user.setProfileImagePath(null); // 엔티티 상태값 변경 -> 자동 수정
+
+        if(imagePath != null && imagePath.isEmpty() == false) {
+            // 실제 서버에 존재하는 파일을 삭제 처리
+            profileUploadService.deleteProfileImage(imagePath);
+        }
+        // 변경된 엔티티를 리턴 (이미지 경로 null 처리된 상태)
+        return user;
+    }
+
 
     /**
      * 회원가입 처리
